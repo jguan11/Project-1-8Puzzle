@@ -1,25 +1,22 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-int row[] = { 1, 0, -1, 0 };
-int col[] = { 0, -1, 0, 1 };
-
 struct Node
 {
     Node* parent;
-    int mat[3][3];
+    int matrix[3][3];
     int x, y;
     int h, g, f;
 };
 
-Node* newNode(int mat[3][3], int x, int y, int newX, int newY, int cost, int level, Node* parent)
+Node* newNode(int matrix[3][3], int x, int y, int newX, int newY, int h, int g, Node* parent)
 {
     Node* node = new Node;
     node->parent = parent;
-    memcpy(node->mat, mat, sizeof node->mat);
-    swap(node->mat[x][y], node->mat[newX][newY]);
-    node->h = cost;
-    node->g = level;
+    memcpy(node->matrix, matrix, sizeof node->matrix);
+    swap(node->matrix[x][y], node->matrix[newX][newY]);
+    node->h = h;
+    node->g = g;
     node->f = node->h + node->g;
     node->x = newX;
     node->y = newY;
@@ -51,23 +48,23 @@ int manhattanHeur(int init[3][3], int goal[3][3]) {
     return ret;
 }
 
-void printMatrix(int mat[3][3])
+void printMatrix(int matrix[3][3])
 {
     for(int i = 0; i < 3; i++)
     {
         for(int j = 0; j < 3; j++)
-            printf("%d ", mat[i][j]);
+            printf("%d ", matrix[i][j]);
         printf("\n");
     }
 }
 
-void printPath(Node* root)
+void printPath(Node* node)
 {
-    if (root == NULL)
+    if (node == NULL)
         return;
-    printPath(root->parent);
-    printMatrix(root->mat);
-	printf("h = %d and g = %d and f = %d", root->h, root->g, root->f);
+    printPath(node->parent);
+    printMatrix(node->matrix);
+	printf("h = %d and g = %d and f = %d", node->h, node->g, node->f);
     printf("\n\n");
 }
 
@@ -76,13 +73,16 @@ int inBounds(int x, int y)
     return (x >= 0 && x < 3 && y >= 0 && y < 3);
 }
 
-bool lowerF (Node* a, Node* b) {
+bool smallestF(Node* a, Node* b) {
   return a->f < b->f;
 }
 
 int qSize = 0;
 int nodesExp = 0;
-void solve(int init[3][3], int x, int y, int goal[3][3], int heur)
+int row[] = {1, 0, -1, 0};
+int col[] = {0, -1, 0, 1};
+
+void Astar(int init[3][3], int x, int y, int goal[3][3], int heur)
 {
     vector<Node*> openset;
     vector<Node*> closedset;
@@ -97,13 +97,13 @@ void solve(int init[3][3], int x, int y, int goal[3][3], int heur)
         heuristic = manhattanHeur(init, goal);
     }
 
-    Node* root = newNode(init, x, y, x, y, heuristic, 0, NULL);
-    openset.push_back(root);
+    Node* node = newNode(init, x, y, x, y, heuristic, 0, NULL);
+    openset.push_back(node);
     qSize = openset.size();
 
     while (!openset.empty())
     {
-        sort(openset.begin(), openset.end(), lowerF);
+        sort(openset.begin(), openset.end(), smallestF);
         current = openset[0];
 
         if (current->h == 0)
@@ -122,15 +122,15 @@ void solve(int init[3][3], int x, int y, int goal[3][3], int heur)
         {
             if (inBounds(current->x + row[i], current->y + col[i]))
             {
-                Node* child = newNode(current->mat, current->x,
+                Node* child = newNode(current->matrix, current->x,
                               current->y, current->x + row[i],
                               current->y + col[i],
                               heuristic, current->g + 1, current);
 
                 if(heur == 2)
-                    child->h = misplacedHeur(child->mat, goal);
+                    child->h = misplacedHeur(child->matrix, goal);
                 else if(heur == 3)
-                    child->h = manhattanHeur(child->mat, goal);
+                    child->h = manhattanHeur(child->matrix, goal);
                 
                 child->f = child->h + child->g;
                 it = find(openset.begin(), openset.end(), child);
@@ -217,7 +217,7 @@ int main()
 		}
 	}
  
-    solve(init, x, y, goal, heur);
+    Astar(init, x, y, goal, heur);
 	printf("Max queue size: %d\n", qSize);
     printf("Nodes expanded: %d\n", nodesExp);
 
