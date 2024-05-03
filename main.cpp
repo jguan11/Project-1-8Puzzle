@@ -1,5 +1,6 @@
 
 #include <bits/stdc++.h>
+#include "operators.h"
 using namespace std;
 
 struct Node
@@ -78,45 +79,55 @@ bool smallestF(Node* a, Node* b) {
   return a->f < b->f;
 }
 
+
+
 int qSize = 0;
 int nodesExp = 0;
 int row[] = {1, 0, -1, 0};
 int col[] = {0, -1, 0, 1};
 
-void UniformCost(int init[3][3], int x, int y, int goal[3][3]) 
+void UniformCost(int init[3][3], int x, int y, int goal[3][3])
 {
-    priority_queue<Node*, vector<Node*>, function<bool(Node*, Node*)>> pq([](Node* a, Node* b) { return a->f > b->f; });
-    unordered_set<string> closedset;
+    vector<Node*> openset;
+    vector<Node*> closedset;
+    vector<Node*>::iterator it;
     Node* current;
 
-    while (!pq.empty())
-    {
-        current = pq.top();
-        pq.pop();
+    Node* node = newNode(init, x, y, x, y, 0, 0, NULL);
+    openset.push_back(node);
+    qSize = openset.size();
 
-        if (current-> == 0)
+    while (!openset.empty())
+    {
+        sort(openset.begin(), openset.end(), smallestF);
+        current = openset[0];
+
+        if (current->h == 0)
         {
             printPath(current);
             return;
         }
 
-        closedset.insert(hash(current->matrix));
+        openset.erase(openset.begin());
+        closedset.push_back(current);
+        if(qSize < openset.size())
+			qSize = openset.size();
         nodesExp++;
 
-        for (for int i  0; i < 4; i++)
+        for (int i = 0; i < 4; i++)
         {
-            if (inBounds(current->x + row[i], current->y + col[i])) {
+            if (inBounds(current->x + row[i], current->y + col[i]))
+            {
                 Node* child = newNode(current->matrix, current->x,
-                                      current->y, current->x + row[i],
-                                      current->y + col[i],
-                                      0, current->g + 1, current);
-
-                child->f = child->g;
-
-                if (closedset.find(hash(child->matrix)) == closedset.end())
-                    pq.push(child);
+                              current->y, current->x + row[i],
+                              current->y + col[i],
+                              0, current->g + 1, current);
+                
+                it = find(openset.begin(), openset.end(), child);
+                if(it == openset.end())
+                    openset.push_back(child);
+            } 
         }
-
     }
 }
 
@@ -182,7 +193,7 @@ void Astar(int init[3][3], int x, int y, int goal[3][3], int heur)
 int main()
 {
     int heur, x, y;
-    cout << "Type 1 for Uniformed Cost Search, 2 for Misplaced Tiles, and 3 for Euclidean Distance... ";
+    cout << "Type 1 for Uniformed Cost Search, 2 for Misplaced Tiles, and 3 for Euclidean Distance... \n";
     cin >> heur;
 	cout << endl;
 
@@ -231,37 +242,27 @@ int main()
     };
     */
 
-    int init[3][3] =
-    {
-        {8, 7, 1},
-        {6, 0, 2},
-        {5, 4, 3}
-    };
-
-    int goal[3][3] =
+   int init[3][3] =
     {
         {1, 2, 3},
         {4, 5, 6},
         {7, 8, 0}
     };
 
-    for(int i = 0; i < 3; i++) {
-		for(int j = 0; j < 3; j++) {
-			if(init[i][j] == 0) {
-				x = i;
-				y = j;
-				break;
-			}
-		}
-	}
- 
-    Astar(init, x, y, goal, heur);
-	printf("Max queue size: %d\n", qSize);
-    printf("Nodes expanded: %d\n", nodesExp);
-
-    UniformCost(init,x,y,goal);
-    printf("Max queue size: %d\n", qSize);
-    printf("Nodes expanded: %d\n", nodesExp);
+     printMatrix(init);
+    cout << endl;
+    Node* a1 = newNode(init, 2, 2, 2, 2, 0, 0, NULL);
+    a1 = Up(a1);
+    printMatrix(a1->matrix);
+    cout << endl;
+    a1 = Left(a1);
+    printMatrix(a1->matrix);
+    cout << endl;
+    a1 = Down(a1);
+    printMatrix(a1->matrix);
+    cout << endl;
+    a1 = Right(a1);
+    printMatrix(a1->matrix);
 
     return 0;
 }
