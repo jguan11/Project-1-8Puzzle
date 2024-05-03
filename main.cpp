@@ -1,12 +1,4 @@
-<<<<<<< HEAD
-/* 
-    1) Problem Class Implementation
-    2) A* Search Implementation
-    3) Puzzle State Represenation
-    4) Testing and Debugging
-    5) Integration and Main Program (GUI)
-*/
-=======
+
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -91,6 +83,43 @@ int nodesExp = 0;
 int row[] = {1, 0, -1, 0};
 int col[] = {0, -1, 0, 1};
 
+void UniformCost(int init[3][3], int x, int y, int goal[3][3]) 
+{
+    priority_queue<Node*, vector<Node*>, function<bool(Node*, Node*)>> pq([](Node* a, Node* b) { return a->f > b->f; });
+    unordered_set<string> closedset;
+    Node* current;
+
+    while (!pq.empty())
+    {
+        current = pq.top();
+        pq.pop();
+
+        if (current-> == 0)
+        {
+            printPath(current);
+            return;
+        }
+
+        closedset.insert(hash(current->matrix));
+        nodesExp++;
+
+        for (for int i  0; i < 4; i++)
+        {
+            if (inBounds(current->x + row[i], current->y + col[i])) {
+                Node* child = newNode(current->matrix, current->x,
+                                      current->y, current->x + row[i],
+                                      current->y + col[i],
+                                      0, current->g + 1, current);
+
+                child->f = child->g;
+
+                if (closedset.find(hash(child->matrix)) == closedset.end())
+                    pq.push(child);
+        }
+
+    }
+}
+
 void Astar(int init[3][3], int x, int y, int goal[3][3], int heur)
 {
     vector<Node*> openset;
@@ -145,7 +174,7 @@ void Astar(int init[3][3], int x, int y, int goal[3][3], int heur)
                 it = find(openset.begin(), openset.end(), child);
                 if(it == openset.end())
                     openset.push_back(child);
-            }
+            } 
         }
     }
 }
@@ -230,6 +259,10 @@ int main()
 	printf("Max queue size: %d\n", qSize);
     printf("Nodes expanded: %d\n", nodesExp);
 
+    UniformCost(init,x,y,goal);
+    printf("Max queue size: %d\n", qSize);
+    printf("Nodes expanded: %d\n", nodesExp);
+
     return 0;
 }
->>>>>>> 706bc9442ae1987ee98f010b06e2f4a7413d4d93
+
