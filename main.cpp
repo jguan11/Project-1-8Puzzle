@@ -1,16 +1,14 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-struct Node
-{
+struct Node {
     Node* parent;
     int matrix[3][3];
     int x, y;
     int h, g, f;
 };
 
-Node* newNode(int matrix[3][3], int x, int y, int newX, int newY, int h, int g, Node* parent)
-{
+Node* newNode(int matrix[3][3], int x, int y, int newX, int newY, int h, int g, Node* parent) {
     Node* node = new Node;
     node->parent = parent;
     memcpy(node->matrix, matrix, sizeof node->matrix);
@@ -23,8 +21,7 @@ Node* newNode(int matrix[3][3], int x, int y, int newX, int newY, int h, int g, 
     return node;
 }
 
-int misplacedHeur(int init[3][3], int goal[3][3])
-{
+int misplacedHeur(int init[3][3], int goal[3][3]) {
     int ret = 0;
     for(int i = 0; i < 3; i++)
         for(int j = 0; j < 3; j++) {
@@ -36,22 +33,21 @@ int misplacedHeur(int init[3][3], int goal[3][3])
     return ret;
 }
 
-int manhattanHeur(int init[3][3], int goal[3][3]) {
-	int ret = 0;
+int euclideanHeur(int init[3][3], int goal[3][3]) {
+    double ret = 0;
     for(int i = 0; i < 3; i++)
         for(int j = 0; j < 3; j++)
-	  	    if(init[i][j] != 0)
-        	    for(int k = 0; k < 3; k++)
-            	    for(int l = 0; l < 3; l++)
-                	    if(init[i][j] == goal[k][l])
-                    	    ret += abs(i - k) + abs(j - l);
+            if(init[i][j] != 0)
+                for(int k = 0; k < 3; k++)
+                    for(int l = 0; l < 3; l++)
+                        if(init[i][j] == goal[k][l])
+                            ret += sqrt(pow(i - k, 2) + pow(j - l, 2));
     return ret;
 }
 
 void printMatrix(int matrix[3][3])
 {
-    for(int i = 0; i < 3; i++)
-    {
+    for(int i = 0; i < 3; i++) {
         for(int j = 0; j < 3; j++)
             printf("%d ", matrix[i][j]);
         printf("\n");
@@ -60,82 +56,79 @@ void printMatrix(int matrix[3][3])
 
 void printPath(Node* node)
 {
-    if (node == NULL)
+    if(node == NULL)
         return;
     printPath(node->parent);
     printMatrix(node->matrix);
-	printf("h = %d and g = %d and f = %d", node->h, node->g, node->f);
+	printf("g = %d and h = %d and f = %d", node->g, node->h, node->f);
     printf("\n\n");
 }
 
-int inBounds(int x, int y)
-{
-    return (x >= 0 && x < 3 && y >= 0 && y < 3);
+int inBounds(int x, int y) {
+    return ((x >= 0) && (x < 3) && (y >= 0) && (y < 3));
 }
 
-bool smallestF(Node* a, Node* b) {
-  return a->f < b->f;
+bool inSet(Node* a, vector<Node*> b) {
+    for(int i = 0; i < b.size(); i++)
+    if(misplacedHeur(a->matrix, b[i]->matrix) == 0)
+        return true;
+    return false;
 }
 
-int qSize = 0;
-int nodesExp = 0;
+bool smallestF (Node* a, Node* b) {
+    return ((a->f) < (b->f));
+}
+
 int row[] = {1, 0, -1, 0};
 int col[] = {0, -1, 0, 1};
 
-void Astar(int init[3][3], int x, int y, int goal[3][3], int heur)
-{
-    vector<Node*> openset;
-    vector<Node*> closedset;
-    vector<Node*>::iterator it;
+void solve(int init[3][3], int x, int y, int goal[3][3], int heur, int &qSize, int &nodesExp) {
+    vector<Node*> frontier;
+    vector<Node*> explored;
     Node* current;
-
     int heuristic;
-    if(heur == 2) {
+
+    if(heur == 1)
+        heuristic = 0;
+    else if(heur == 2)
         heuristic = misplacedHeur(init, goal);
-    }
-    else if(heur == 3) {
-        heuristic = manhattanHeur(init, goal);
-    }
+    else if(heur == 3)
+        heuristic = euclideanHeur(init, goal);
 
     Node* node = newNode(init, x, y, x, y, heuristic, 0, NULL);
-    openset.push_back(node);
-    qSize = openset.size();
+    node->f = node->h + node->g;
+    frontier.push_back(node);
+    qSize = 1;
 
-    while (!openset.empty())
-    {
-        sort(openset.begin(), openset.end(), smallestF);
-        current = openset[0];
+    while(!frontier.empty()) {
+        if(qSize < frontier.size())
+			qSize = frontier.size();
+        sort(frontier.begin(), frontier.end(), smallestF);
+        current = frontier[0];
 
-        if (current->h == 0)
-        {
+        if(misplacedHeur(current->matrix, goal) == 0) {
             printPath(current);
             return;
         }
 
-        openset.erase(openset.begin());
-        closedset.push_back(current);
-        if(qSize < openset.size())
-			qSize = openset.size();
+        frontier.erase(frontier.begin());
+        explored.push_back(current);
         nodesExp++;
 
-        for (int i = 0; i < 4; i++)
-        {
-            if (inBounds(current->x + row[i], current->y + col[i]))
-            {
-                Node* child = newNode(current->matrix, current->x,
-                              current->y, current->x + row[i],
-                              current->y + col[i],
-                              heuristic, current->g + 1, current);
+        for(int i = 0; i < 4; i++) {
+            if(inBounds(current->x + row[i], current->y + col[i])) {
+                Node* child = newNode(current->matrix, current->x, current->y, current->x + row[i], current->y + col[i], current->h, current->g + 1, current);
 
-                if(heur == 2)
+                if(heur == 1)
+                    child-> h = 0;
+                else if(heur == 2)
                     child->h = misplacedHeur(child->matrix, goal);
                 else if(heur == 3)
-                    child->h = manhattanHeur(child->matrix, goal);
+                    child->h = euclideanHeur(child->matrix, goal);
                 
                 child->f = child->h + child->g;
-                it = find(openset.begin(), openset.end(), child);
-                if(it == openset.end())
-                    openset.push_back(child);
+                if(!inSet(child, frontier) && !inSet(child, explored))
+                    frontier.push_back(child);
             }
         }
     }
@@ -195,9 +188,9 @@ int main()
 
     int init[3][3] =
     {
-        {8, 7, 1},
-        {6, 0, 2},
-        {5, 4, 3}
+        {1, 0, 3},
+        {4, 2, 6},
+        {7, 5, 8}
     };
 
     int goal[3][3] =
@@ -216,10 +209,16 @@ int main()
 			}
 		}
 	}
- 
-    Astar(init, x, y, goal, heur);
-	printf("Max queue size: %d\n", qSize);
-    printf("Nodes expanded: %d\n", nodesExp);
 
+    int qSize = 0;
+    int nodesExp = 0;
+    if((heur == 1) || (heur == 2) || (heur == 3)) {
+        solve(init, x, y, goal, heur, qSize, nodesExp);
+	    printf("Max queue size: %d\n", qSize);
+        printf("Nodes expanded: %d\n", nodesExp);
+    }
+    else
+        cout << "Invalid input" << endl;
+    
     return 0;
 }
